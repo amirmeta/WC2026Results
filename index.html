@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIFA World Cup 2026 UN House dashboard</title>
+    <title>FIFA World Cup 2026 Live Tournament Dashboard</title>
     <style>
         :root {
             --primary: #1a365d;
@@ -61,13 +61,18 @@
         tr.qualified-top2 { background-color: rgba(56, 161, 105, 0.08); }
         tr.qualified-wildcard { background-color: rgba(43, 108, 176, 0.08); }
         
+        /* Participants Tab Utilities */
+        .search-container { margin-bottom: 15px; display: flex; gap: 10px; }
+        .search-input { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; width: 100%; max-width: 300px; }
+        .search-input:focus { outline: 2px solid var(--secondary); }
+        .text-muted { color: #718096; font-size: 12px; }
+
         .match-list { display: flex; flex-direction: column; gap: 10px; }
         .match-row { display: flex; align-items: center; justify-content: space-between; background: #f7fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); }
         .team-label { width: 38%; font-weight: 500; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
         .team-label.right { justify-content: flex-end; text-align: right; }
         .team-label.text-left { justify-content: flex-start; text-align: left; }
         
-        /* Static Score Layout styling instead of old input boxes */
         .score-display-wrapper { display: flex; align-items: center; gap: 6px; }
         .score-display { width: 32px; background: #edf2f7; text-align: center; padding: 5px 0; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px; font-weight: bold; color: var(--primary); }
         .vs-divider { font-size: 11px; color: #a0aec0; font-weight: bold; padding: 0 4px; }
@@ -94,15 +99,17 @@
 <body>
 
 <header>
-    <h1>FIFA WORLD CUP 2026 UN House dashboard</h1>
-    <p>Live standings, scores, and brackets updated and managed directly by the tournament coordinator.</p>
+    <h1>FIFA WORLD CUP 2026 Official Tournament Dashboard</h1>
+    <p>Live standings, scores, brackets, and team configurations managed directly by the tournament coordinator.</p>
 </header>
 
 <div class="tabs-main">
     <button class="btn-main active" onclick="switchMainTab('group-stage-view', this)">Group Stage Pool Phase</button>
     <button class="btn-main" onclick="switchMainTab('knockout-bracket-view', this)">Knockout Final Phase Bracket</button>
+    <button class="btn-main" onclick="switchMainTab('participants-view', this)">Participants</button>
 </div>
 
+<!-- CONTAINER 1: GROUP STAGE MASTER PANEL -->
 <div id="group-stage-view" class="tab-panel active">
     <div class="tabs-sub" id="group-subnav-container"></div>
     <div id="group-content-container"></div>
@@ -120,6 +127,7 @@
     </div>
 </div>
 
+<!-- CONTAINER 2: KNOCKOUT BRACKET MASTER PANEL -->
 <div id="knockout-bracket-view" class="tab-panel">
     <div class="tabs-sub">
         <button class="btn-sub active" onclick="switchSubTab('ko-r32', this, 'ko-sub-panel')">Round of 32</button>
@@ -136,19 +144,100 @@
     <div id="ko-finals" class="tab-panel ko-sub-panel group-grid"></div>
 </div>
 
+<!-- CONTAINER 3: PARTICIPANTS EXCEL TAB PANEL -->
+<div id="participants-view" class="tab-panel">
+    <div class="card">
+        <h2>Tournament Participants Ranking Dataset</h2>
+        <div class="search-container">
+            <input type="text" id="participant-search" class="search-input" placeholder="Search country or group..." oninput="filterParticipantsTable()">
+            <span class="text-muted" style="align-self: center;" id="participant-count">Showing 48 teams</span>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Group</th>
+                    <th class="text-left">Country</th>
+                    <th>Normalized FIFA Pts</th>
+                    <th>FIFA World Ranking</th>
+                    <th>FIFA Pts</th>
+                </tr>
+            </thead>
+            <tbody id="participants-table-body"></tbody>
+        </table>
+    </div>
+</div>
+
 <script>
 /**
- * 📢 HOW TO MANAGE AND ENTER RESULTS:
- * Locate the "mymatchResults" variable right below. 
- * Simply type the scores inside the quotation marks (e.g., "3"). 
- * Leave them completely blank "" if a match hasn't been played yet.
- * The system automatically structures everything else dynamically on the fly!
+ * 📊 EXCEL SEED DATA FOR PARTICIPANTS TAB
+ * Re-aligned matching the official 48-team grouping configuration.
  */
+const excelParticipantsData = [
+    { group: "A", country: "Mexico (Liridon UNDP)", normPts: "42.85", rank: 16, totalPts: "1675.75" },
+    { group: "A", country: "South Korea (Xheva UNDP)", normPts: "40.90", rank: 22, totalPts: "1599.45" },
+    { group: "A", country: "South Africa (Erblina UNDP)", normPts: "36.64", rank: 60, totalPts: "1432.76" },
+    { group: "A", country: "Czechia (Nuno UNDP)", normPts: "38.02", rank: 43, totalPts: "1487.00" },
+    
+    { group: "B", country: "Canada (Milanka UNHCR)", normPts: "39.87", rank: 29, totalPts: "1559.15" },
+    { group: "B", country: "Bosnia and Herzegovina (Anton)", normPts: "34.84", rank: 71, totalPts: "1362.37" },
+    { group: "B", country: "Qatar (Bojan)", normPts: "37.20", rank: 56, totalPts: "1454.96" },
+    { group: "B", country: "Switzerland (Besnik UNFPA)", normPts: "42.31", rank: 18, totalPts: "1654.69" },
+    
+    { group: "C", country: "Brazil (Blerta)", normPts: "45.02", rank: 5, totalPts: "1760.46" },
+    { group: "C", country: "Morocco (Florent)", normPts: "44.40", rank: 12, totalPts: "1736.50" },
+    { group: "C", country: "Haiti (Artan UNDSS)", normPts: "32.22", rank: 90, totalPts: "1260.00" },
+    { group: "C", country: "Scotland (Alban)", normPts: "38.52", rank: 39, totalPts: "1506.50" },
+    
+    { group: "D", country: "United States (Valza)", normPts: "42.45", rank: 17, totalPts: "1660.00" },
+    { group: "D", country: "Paraguay (Donika UNFPA)", normPts: "36.90", rank: 58, totalPts: "1442.20" },
+    { group: "D", country: "Australia (Jeton UNFPA)", normPts: "39.95", rank: 28, totalPts: "1562.10" },
+    { group: "D", country: "Türkiye (Fjolla)", normPts: "38.40", rank: 40, totalPts: "1501.80" },
+    
+    { group: "E", country: "Germany (Marta)", normPts: "43.50", rank: 13, totalPts: "1702.10" },
+    { group: "E", country: "Côte d'Ivoire (Armenda)", normPts: "38.20", rank: 41, totalPts: "1494.60" },
+    { group: "E", country: "Ecuador (Ajla)", normPts: "40.70", rank: 23, totalPts: "1591.73" },
+    { group: "E", country: "Curaçao (Anna)", normPts: "31.40", rank: 95, totalPts: "1224.00" },
+    
+    { group: "F", country: "Netherlands (Vjosa UNDCO)", normPts: "44.91", rank: 7, totalPts: "1756.27" },
+    { group: "F", country: "Japan (Dudley UNDP)", normPts: "42.19", rank: 19, totalPts: "1650.12" },
+    { group: "F", country: "Sweden (Denion UNDP)", normPts: "38.03", rank: 42, totalPts: "1487.13" },
+    { group: "F", country: "Tunisia (Mentor UNDP)", normPts: "37.82", rank: 47, totalPts: "1479.04" },
+    
+    { group: "G", country: "Belgium (Zarife UNFPA)", normPts: "44.25", rank: 9, totalPts: "1730.71" },
+    { group: "G", country: "Egypt (Nexhat UNDP)", normPts: "39.81", rank: 31, totalPts: "1556.71" },
+    { group: "G", country: "IR Iran (Agim Deliaj)", normPts: "41.35", rank: 20, totalPts: "1617.02" },
+    { group: "G", country: "New Zealand (Nderim UNDP)", normPts: "32.71", rank: 85, totalPts: "1279.25" },
+    
+    { group: "H", country: "Spain (Arton UNDP)", normPts: "48.00", rank: 1, totalPts: "1877.18" },
+    { group: "H", country: "Uruguay (Mailiss UNDCO)", normPts: "42.60", rank: 15, totalPts: "1665.30" },
+    { group: "H", country: "Saudi Arabia (Ferdinand UNDP)", normPts: "36.20", rank: 62, totalPts: "1418.00" },
+    { group: "H", country: "Cabo Verde (Samire UNDP)", normPts: "35.80", rank: 65, totalPts: "1401.50" },
+    
+    { group: "I", country: "France (Merita UNDP)", normPts: "47.50", rank: 3, totalPts: "1858.40" },
+    { group: "I", country: "Senegal (Valbona UNDP)", normPts: "41.10", rank: 21, totalPts: "1610.50" },
+    { group: "I", country: "Iraq (Amir UNDP)", normPts: "35.50", rank: 67, totalPts: "1387.60" },
+    { group: "I", country: "Norway (Visare UNFPA)", normPts: "39.10", rank: 35, totalPts: "1530.20" },
+    
+    { group: "J", country: "Argentina (Gresa UNDP)", normPts: "47.85", rank: 2, totalPts: "1870.20" },
+    { group: "J", country: "Algeria (Rrezearta UNDP)", normPts: "37.95", rank: 46, totalPts: "1484.30" },
+    { group: "J", country: "Austria (Dian UNDP)", normPts: "41.20", rank: 25, totalPts: "1574.00" },
+    { group: "J", country: "Jordan (Eleonora UNDP)", normPts: "34.10", rank: 74, totalPts: "1332.00" },
+    
+    { group: "K", country: "Portugal (Merita UNHCR)", normPts: "44.50", rank: 8, totalPts: "1742.60" },
+    { group: "K", country: "Colombia (Blend UNDP)", normPts: "42.25", rank: 14, totalPts: "1662.90" },
+    { group: "K", country: "Uzbekistan (Alban UNOPS)", normPts: "34.50", rank: 72, totalPts: "1348.10" },
+    { group: "K", country: "Congo DR (Blerim UNV)", normPts: "35.10", rank: 69, totalPts: "1370.00" },
+    
+    { group: "L", country: "England (Lorik UNDCO)", normPts: "46.20", rank: 4, totalPts: "1807.50" },
+    { group: "L", country: "Croatia (Shpend UNDCO)", normPts: "43.10", rank: 11, totalPts: "1695.80" },
+    { group: "L", country: "Ghana (Enisa UNDP)", normPts: "35.20", rank: 68, totalPts: "1374.00" },
+    { group: "L", country: "Panama (Fatmire UNDP)", normPts: "37.50", rank: 50, totalPts: "1475.20" }
+];
+
 const mymatchResults = {
-    // --- GROUP STAGE MATCHES ---
     // Group A
-    "g-m-1-h": "2", "g-m-1-a": "0",   // Mexico vs South Africa
-    "g-m-2-h": "2",  "g-m-2-a": "1",    // South Korea vs Czechia
+    "g-m-1-h": "2", "g-m-1-a": "1",   // Mexico vs South Africa
+    "g-m-2-h": "",  "g-m-2-a": "",    // South Korea vs Czechia
     "g-m-25-h": "", "g-m-25-a": "",   // Czechia vs South Africa
     "g-m-28-h": "", "g-m-28-a": "",   // Mexico vs South Korea
     "g-m-53-h": "", "g-m-53-a": "",   // Czechia vs Mexico
@@ -172,80 +261,77 @@ const mymatchResults = {
 
     // Group D
     "g-m-4-h": "",  "g-m-4-a": "",    // United States vs Paraguay
-    "g-m-6-h": "",  "g-m-6-a": "",    // Australia vs Turkey
-    "g-m-31-h": "", "g-m-31-a": "",   // Paraguay vs Turkey
+    "g-m-6-h": "",  "g-m-6-a": "",    // Australia vs Türkiye
+    "g-m-31-h": "", "g-m-31-a": "",   // Paraguay vs Türkiye
     "g-m-32-h": "", "g-m-32-a": "",   // United States vs Australia
     "g-m-51-h": "", "g-m-51-a": "",   // Paraguay vs Australia
-    "g-m-52-h": "", "g-m-52-a": "",   // Turkey vs United States
+    "g-m-52-h": "", "g-m-52-a": "",   // Türkiye vs United States
 
     // Group E
-    "g-m-9-h": "",  "g-m-9-a": "",    // Germany vs Curaçao
-    "g-m-10-h": "", "g-m-10-a": "",   // Ecuador vs Ivory Coast
-    "g-m-33-h": "", "g-m-33-a": "",   // Curaçao vs Ivory Coast
+    "g-m-9-h": "",  "g-m-9-a": "",    // Germany vs Côte d'Ivoire
+    "g-m-10-h": "", "g-m-10-a": "",   // Ecuador vs Curaçao
+    "g-m-33-h": "", "g-m-33-a": "",   // Côte d'Ivoire vs Curaçao
     "g-m-34-h": "", "g-m-34-a": "",   // Germany vs Ecuador
-    "g-m-57-h": "", "g-m-57-a": "",   // Curaçao vs Ecuador
-    "g-m-58-h": "", "g-m-58-a": "",   // Ivory Coast vs Germany
+    "g-m-57-h": "", "g-m-57-a": "",   // Côte d'Ivoire vs Ecuador
+    "g-m-58-h": "", "g-m-58-a": "",   // Curaçao vs Germany
 
     // Group F
-    "g-m-11-h": "", "g-m-11-a": "",   // Netherlands vs Sweden
-    "g-m-12-h": "", "g-m-12-a": "",   // Japan vs Tunisia
-    "g-m-35-h": "", "g-m-35-a": "",   // Sweden vs Tunisia
-    "g-m-36-h": "", "g-m-36-a": "",   // Netherlands vs Japan
-    "g-m-59-h": "", "g-m-59-a": "",   // Sweden vs Japan
+    "g-m-11-h": "", "g-m-11-a": "",   // Netherlands vs Japan
+    "g-m-12-h": "", "g-m-12-a": "",   // Sweden vs Tunisia
+    "g-m-35-h": "", "g-m-35-a": "",   // Japan vs Tunisia
+    "g-m-36-h": "", "g-m-36-a": "",   // Netherlands vs Sweden
+    "g-m-59-h": "", "g-m-59-a": "",   // Japan vs Sweden
     "g-m-60-h": "", "g-m-60-a": "",   // Tunisia vs Netherlands
 
     // Group G
-    "g-m-13-h": "", "g-m-13-a": "",   // Belgium vs Algeria
-    "g-m-14-h": "", "g-m-14-a": "",   // Argentina vs Jordan
-    "g-m-37-h": "", "g-m-37-a": "",   // Algeria vs Jordan
-    "g-m-38-h": "", "g-m-38-a": "",   // Belgium vs Argentina
-    "g-m-61-h": "", "g-m-61-a": "",   // Algeria vs Argentina
-    "g-m-62-h": "", "g-m-62-a": "",   // Jordan vs Belgium
+    "g-m-13-h": "", "g-m-13-a": "",   // Belgium vs Egypt
+    "g-m-14-h": "", "g-m-14-a": "",   // IR Iran vs New Zealand
+    "g-m-37-h": "", "g-m-37-a": "",   // Egypt vs New Zealand
+    "g-m-38-h": "", "g-m-38-a": "",   // Belgium vs IR Iran
+    "g-m-61-h": "", "g-m-61-a": "",   // Egypt vs IR Iran
+    "g-m-62-h": "", "g-m-62-a": "",   // New Zealand vs Belgium
 
     // Group H
-    "g-m-15-h": "", "g-m-15-a": "",   // Spain vs Cape Verde
-    "g-m-16-h": "", "g-m-16-a": "",   // Uruguay vs Saudi Arabia
-    "g-m-39-h": "", "g-m-39-a": "",   // Cape Verde vs Saudi Arabia
-    "g-m-40-h": "", "g-m-40-a": "",   // Spain vs Uruguay
-    "g-m-63-h": "", "g-m-63-a": "",   // Cape Verde vs Uruguay
-    "g-m-64-h": "", "g-m-64-a": "",   // Saudi Arabia vs Spain
+    "g-m-15-h": "", "g-m-15-a": "",   // Spain vs Uruguay
+    "g-m-16-h": "", "g-m-16-a": "",   // Saudi Arabia vs Cabo Verde
+    "g-m-39-h": "", "g-m-39-a": "",   // Uruguay vs Cabo Verde
+    "g-m-40-h": "", "g-m-40-a": "",   // Spain vs Saudi Arabia
+    "g-m-63-h": "", "g-m-63-a": "",   // Uruguay vs Saudi Arabia
+    "g-m-64-h": "", "g-m-64-a": "",   // Cabo Verde vs Spain
 
     // Group I
-    "g-m-17-h": "", "g-m-17-a": "",   // France vs Jamaica
-    "g-m-18-h": "", "g-m-18-a": "",   // Iraq vs Uzbekistan
-    "g-m-41-h": "", "g-m-41-a": "",   // Jamaica vs Uzbekistan
+    "g-m-17-h": "", "g-m-17-a": "",   // France vs Senegal
+    "g-m-18-h": "", "g-m-18-a": "",   // Iraq vs Norway
+    "g-m-41-h": "", "g-m-41-a": "",   // Senegal vs Norway
     "g-m-42-h": "", "g-m-42-a": "",   // France vs Iraq
-    "g-m-65-h": "", "g-m-65-a": "",   // Jamaica vs Iraq
-    "g-m-66-h": "", "g-m-66-a": "",   // Uzbekistan vs France
+    "g-m-65-h": "", "g-m-65-a": "",   // Senegal vs Iraq
+    "g-m-66-h": "", "g-m-66-a": "",   // Norway vs France
 
     // Group J
-    "g-m-19-h": "", "g-m-19-a": "",   // Italy vs Cameroon
-    "g-m-20-h": "", "g-m-20-a": "",   // Colombia vs New Zealand
-    "g-m-43-h": "", "g-m-43-a": "",   // Cameroon vs New Zealand
-    "g-m-44-h": "", "g-m-44-a": "",   // Italy vs Colombia
-    "g-m-67-h": "", "g-m-67-a": "",   // Cameroon vs Colombia
-    "g-m-68-h": "", "g-m-68-a": "",   // New Zealand vs Italy
+    "g-m-19-h": "", "g-m-19-a": "",   // Argentina vs Algeria
+    "g-m-20-h": "", "g-m-20-a": "",   // Austria vs Jordan
+    "g-m-43-h": "", "g-m-43-a": "",   // Algeria vs Jordan
+    "g-m-44-h": "", "g-m-44-a": "",   // Argentina vs Austria
+    "g-m-67-h": "", "g-m-67-a": "",   // Algeria vs Austria
+    "g-m-68-h": "", "g-m-68-a": "",   // Jordan vs Argentina
 
     // Group K
-    "g-m-21-h": "", "g-m-21-a": "",   // Portugal vs Angola
-    "g-m-22-h": "", "g-m-22-a": "",   // Egypt vs Iran
-    "g-m-45-h": "", "g-m-45-a": "",   // Angola vs Iran
-    "g-m-46-h": "", "g-m-46-a": "",   // Portugal vs Egypt
-    "g-m-69-h": "", "g-m-69-a": "",   // Angola vs Egypt
-    "g-m-70-h": "", "g-m-70-a": "",   // Iran vs Portugal
+    "g-m-21-h": "", "g-m-21-a": "",   // Portugal vs Colombia
+    "g-m-22-h": "", "g-m-22-a": "",   // Uzbekistan vs Congo DR
+    "g-m-45-h": "", "g-m-45-a": "",   // Colombia vs Congo DR
+    "g-m-46-h": "", "g-m-46-a": "",   // Portugal vs Uzbekistan
+    "g-m-69-h": "", "g-m-69-a": "",   // Colombia vs Uzbekistan
+    "g-m-70-h": "", "g-m-70-a": "",   // Congo DR vs Portugal
 
     // Group L
-    "g-m-23-h": "", "g-m-23-a": "",   // England vs Panama
-    "g-m-24-h": "", "g-m-24-a": "",   // Croatia vs Ghana
-    "g-m-47-h": "", "g-m-47-a": "",   // Panama vs Ghana
-    "g-m-48-h": "", "g-m-48-a": "",   // England vs Croatia
-    "g-m-71-h": "", "g-m-71-a": "",   // Panama vs Croatia
-    "g-m-72-h": "", "g-m-72-a": "",   // Ghana vs England
+    "g-m-23-h": "", "g-m-23-a": "",   // England vs Croatia
+    "g-m-24-h": "", "g-m-24-a": "",   // Ghana vs Panama
+    "g-m-47-h": "", "g-m-47-a": "",   // Croatia vs Panama
+    "g-m-48-h": "", "g-m-48-a": "",   // England vs Ghana
+    "g-m-71-h": "", "g-m-71-a": "",   // Croatia vs Ghana
+    "g-m-72-h": "", "g-m-72-a": "",   // Panama vs England
 
-
-    // --- KNOCKOUT STAGE MATCHES ---
-    // (Inputs take standard full-time scores, PK entries handle ties)
-    // Round of 32
+    // Knockouts Round of 32
     "ko-in-73-h": "", "ko-in-73-a": "", "ko-pk-73-h": "", "ko-pk-73-a": "",
     "ko-in-74-h": "", "ko-in-74-a": "", "ko-pk-74-h": "", "ko-pk-74-a": "",
     "ko-in-75-h": "", "ko-in-75-a": "", "ko-pk-75-h": "", "ko-pk-75-a": "",
@@ -284,38 +370,38 @@ const mymatchResults = {
     "ko-in-102-h": "", "ko-in-102-a": "", "ko-pk-102-h": "", "ko-pk-102-a": "",
 
     // Finals
-    "ko-in-103-h": "", "ko-in-103-a": "", "ko-pk-103-h": "", "ko-pk-103-a": "", // 3rd Place
-    "ko-in-104-h": "", "ko-in-104-a": "", "ko-pk-104-h": "", "ko-pk-104-a": ""  // Final Match
+    "ko-in-103-h": "", "ko-in-103-a": "", "ko-pk-103-h": "", "ko-pk-103-a": "",
+    "ko-in-104-h": "", "ko-in-104-a": "", "ko-pk-104-h": "", "ko-pk-104-a": ""
 };
 
 const countryISO2 = {
-    "Mexico": "mx", "South Africa": "za", "South Korea": "kr", "Czechia": "cz",
+    "Mexico": "mx", "South Korea": "kr", "South Africa": "za", "Czechia": "cz",
     "Canada": "ca", "Bosnia and Herzegovina": "ba", "Qatar": "qa", "Switzerland": "ch",
-    "Brazil": "br", "Haiti": "ht", "Morocco": "ma", "Scotland": "gb-sct",
-    "United States": "us", "Paraguay": "py", "Australia": "au", "Turkey": "tr",
-    "Germany": "de", "Curaçao": "cw", "Ecuador": "ec", "Ivory Coast": "ci",
-    "Netherlands": "nl", "Sweden": "se", "Japan": "jp", "Tunisia": "tn",
-    "Belgium": "be", "Algeria": "dz", "Argentina": "ar", "Jordan": "jo",
-    "Spain": "es", "Cape Verde": "cv", "Uruguay": "uy", "Saudi Arabia": "sa",
-    "France": "fr", "Jamaica": "jm", "Iraq": "iq", "Uzbekistan": "uz",
-    "Italy": "it", "Cameroon": "cm", "Colombia": "co", "New Zealand": "nz",
-    "Portugal": "pt", "Angola": "ao", "Egypt": "eg", "Iran": "ir",
-    "England": "gb-eng", "Panama": "pa", "Croatia": "hr", "Ghana": "gh"
+    "Brazil": "br", "Morocco": "ma", "Haiti": "ht", "Scotland": "gb-sct",
+    "United States": "us", "Paraguay": "py", "Australia": "au", "Türkiye": "tr",
+    "Germany": "de", "Côte d'Ivoire": "ci", "Ecuador": "ec", "Curaçao": "cw",
+    "Netherlands": "nl", "Japan": "jp", "Sweden": "se", "Tunisia": "tn",
+    "Belgium": "be", "Egypt": "eg", "IR Iran": "ir", "New Zealand": "nz",
+    "Spain": "es", "Uruguay": "uy", "Saudi Arabia": "sa", "Cabo Verde": "cv",
+    "France": "fr", "Senegal": "sn", "Iraq": "iq", "Norway": "no",
+    "Argentina": "ar", "Algeria": "dz", "Austria": "at", "Jordan": "jo",
+    "Portugal": "pt", "Colombia": "co", "Uzbekistan": "uz", "Congo DR": "cd",
+    "England": "gb-eng", "Croatia": "hr", "Ghana": "gh", "Panama": "pa"
 };
 
 const initialTeamsState = {
-    "Mexico": "A", "South Africa": "A", "South Korea": "A", "Czechia": "A",
+    "Mexico": "A", "South Korea": "A", "South Africa": "A", "Czechia": "A",
     "Canada": "B", "Bosnia and Herzegovina": "B", "Qatar": "B", "Switzerland": "B",
-    "Brazil": "C", "Haiti": "C", "Morocco": "C", "Scotland": "C",
-    "United States": "D", "Paraguay": "D", "Australia": "D", "Turkey": "D",
-    "Germany": "E", "Curaçao": "E", "Ecuador": "E", "Ivory Coast": "E",
-    "Netherlands": "F", "Sweden": "F", "Japan": "F", "Tunisia": "F",
-    "Belgium": "G", "Algeria": "G", "Argentina": "G", "Jordan": "G",
-    "Spain": "H", "Cape Verde": "H", "Uruguay": "H", "Saudi Arabia": "H",
-    "France": "I", "Jamaica": "I", "Iraq": "I", "Uzbekistan": "I",
-    "Italy": "J", "Cameroon": "J", "Colombia": "J", "New Zealand": "J",
-    "Portugal": "K", "Angola": "K", "Egypt": "K", "Iran": "K",
-    "England": "L", "Panama": "L", "Croatia": "L", "Ghana": "L"
+    "Brazil": "C", "Morocco": "C", "Haiti": "C", "Scotland": "C",
+    "United States": "D", "Paraguay": "D", "Australia": "D", "Türkiye": "D",
+    "Germany": "E", "Côte d'Ivoire": "E", "Ecuador": "E", "Curaçao": "E",
+    "Netherlands": "F", "Japan": "F", "Sweden": "F", "Tunisia": "F",
+    "Belgium": "G", "Egypt": "G", "IR Iran": "G", "New Zealand": "G",
+    "Spain": "H", "Uruguay": "H", "Saudi Arabia": "H", "Cabo Verde": "H",
+    "France": "I", "Senegal": "I", "Iraq": "I", "Norway": "I",
+    "Argentina": "J", "Algeria": "J", "Austria": "J", "Jordan": "J",
+    "Portugal": "K", "Colombia": "K", "Uzbekistan": "K", "Congo DR": "K",
+    "England": "L", "Croatia": "L", "Ghana": "L", "Panama": "L"
 };
 
 let teams = {};
@@ -324,39 +410,50 @@ const groupMatches = [
     { id: 1, group: "A", home: "Mexico", away: "South Africa" }, { id: 2, group: "A", home: "South Korea", away: "Czechia" },
     { id: 25, group: "A", home: "Czechia", away: "South Africa" }, { id: 28, group: "A", home: "Mexico", away: "South Korea" },
     { id: 53, group: "A", home: "Czechia", away: "Mexico" }, { id: 54, group: "A", home: "South Africa", away: "South Korea" },
+    
     { id: 3, group: "B", home: "Canada", away: "Bosnia and Herzegovina" }, { id: 8, group: "B", home: "Qatar", away: "Switzerland" },
     { id: 26, group: "B", home: "Bosnia and Herzegovina", away: "Switzerland" }, { id: 27, group: "B", home: "Canada", away: "Qatar" },
     { id: 55, group: "B", home: "Bosnia and Herzegovina", away: "Qatar" }, { id: 56, group: "B", home: "Switzerland", away: "Canada" },
+    
     { id: 7, group: "C", home: "Brazil", away: "Morocco" }, { id: 5, group: "C", home: "Haiti", away: "Scotland" },
     { id: 30, group: "C", home: "Scotland", away: "Morocco" }, { id: 29, group: "C", home: "Brazil", away: "Haiti" },
     { id: 49, group: "C", home: "Scotland", away: "Brazil" }, { id: 50, group: "C", home: "Morocco", away: "Haiti" },
-    { id: 4, group: "D", home: "United States", away: "Paraguay" }, { id: 6, group: "D", home: "Australia", away: "Turkey" },
-    { id: 31, group: "D", home: "Paraguay", away: "Turkey" }, { id: 32, group: "D", home: "United States", away: "Australia" },
-    { id: 51, group: "D", home: "Paraguay", away: "Australia" }, { id: 52, group: "D", home: "Turkey", away: "United States" },
-    { id: 9, group: "E", home: "Germany", away: "Curaçao" }, { id: 10, group: "E", home: "Ecuador", away: "Ivory Coast" },
-    { id: 33, group: "E", home: "Curaçao", away: "Ivory Coast" }, { id: 34, group: "E", home: "Germany", away: "Ecuador" },
-    { id: 57, group: "E", home: "Curaçao", away: "Ecuador" }, { id: 58, group: "E", home: "Ivory Coast", away: "Germany" },
-    { id: 11, group: "F", home: "Netherlands", away: "Sweden" }, { id: 12, group: "F", home: "Japan", away: "Tunisia" },
-    { id: 35, group: "F", home: "Sweden", away: "Tunisia" }, { id: 36, group: "F", home: "Netherlands", away: "Japan" },
-    { id: 59, group: "F", home: "Sweden", away: "Japan" }, { id: 60, group: "F", home: "Tunisia", away: "Netherlands" },
-    { id: 13, group: "G", home: "Belgium", away: "Algeria" }, { id: 14, group: "G", home: "Argentina", away: "Jordan" },
-    { id: 37, group: "G", home: "Algeria", away: "Jordan" }, { id: 38, group: "G", home: "Belgium", away: "Argentina" },
-    { id: 61, group: "G", home: "Algeria", away: "Argentina" }, { id: 62, group: "G", home: "Jordan", away: "Belgium" },
-    { id: 15, group: "H", home: "Spain", away: "Cape Verde" }, { id: 16, group: "H", home: "Uruguay", away: "Saudi Arabia" },
-    { id: 39, group: "H", home: "Cape Verde", away: "Saudi Arabia" }, { id: 40, group: "H", home: "Spain", away: "Uruguay" },
-    { id: 63, group: "H", home: "Cape Verde", away: "Uruguay" }, { id: 64, group: "H", home: "Saudi Arabia", away: "Spain" },
-    { id: 17, group: "I", home: "France", away: "Jamaica" }, { id: 18, group: "I", home: "Iraq", away: "Uzbekistan" },
-    { id: 41, group: "I", home: "Jamaica", away: "Uzbekistan" }, { id: 42, group: "I", home: "France", away: "Iraq" },
-    { id: 65, group: "I", home: "Jamaica", away: "Iraq" }, { id: 66, group: "I", home: "Uzbekistan", away: "France" },
-    { id: 19, group: "J", home: "Italy", away: "Cameroon" }, { id: 20, group: "J", home: "Colombia", away: "New Zealand" },
-    { id: 43, group: "J", home: "Cameroon", away: "New Zealand" }, { id: 44, group: "J", home: "Italy", away: "Colombia" },
-    { id: 67, group: "J", home: "Cameroon", away: "Colombia" }, { id: 68, group: "J", home: "New Zealand", away: "Italy" },
-    { id: 21, group: "K", home: "Portugal", away: "Angola" }, { id: 22, group: "K", home: "Egypt", away: "Iran" },
-    { id: 45, group: "K", home: "Angola", away: "Iran" }, { id: 46, group: "K", home: "Portugal", away: "Egypt" },
-    { id: 69, group: "K", home: "Angola", away: "Egypt" }, { id: 70, group: "K", home: "Iran", away: "Portugal" },
-    { id: 23, group: "L", home: "England", away: "Panama" }, { id: 24, group: "L", home: "Croatia", away: "Ghana" },
-    { id: 47, group: "L", home: "Panama", away: "Ghana" }, { id: 48, group: "L", home: "England", away: "Croatia" },
-    { id: 71, group: "L", home: "Panama", away: "Croatia" }, { id: 72, group: "L", home: "Ghana", away: "England" }
+    
+    { id: 4, group: "D", home: "United States", away: "Paraguay" }, { id: 6, group: "D", home: "Australia", away: "Türkiye" },
+    { id: 31, group: "D", home: "Paraguay", away: "Türkiye" }, { id: 32, group: "D", home: "United States", away: "Australia" },
+    { id: 51, group: "D", home: "Paraguay", away: "Australia" }, { id: 52, group: "D", home: "Türkiye", away: "United States" },
+    
+    { id: 9, group: "E", home: "Germany", away: "Côte d'Ivoire" }, { id: 10, group: "E", home: "Ecuador", away: "Curaçao" },
+    { id: 33, group: "E", home: "Côte d'Ivoire", away: "Curaçao" }, { id: 34, group: "E", home: "Germany", away: "Ecuador" },
+    { id: 57, group: "E", home: "Côte d'Ivoire", away: "Ecuador" }, { id: 58, group: "E", home: "Curaçao", away: "Germany" },
+    
+    { id: 11, group: "F", home: "Netherlands", away: "Japan" }, { id: 12, group: "F", home: "Sweden", away: "Tunisia" },
+    { id: 35, group: "F", home: "Japan", away: "Tunisia" }, { id: 36, group: "F", home: "Netherlands", away: "Sweden" },
+    { id: 59, group: "F", home: "Japan", away: "Sweden" }, { id: 60, group: "F", home: "Tunisia", away: "Netherlands" },
+    
+    { id: 13, group: "G", home: "Belgium", away: "Egypt" }, { id: 14, group: "G", home: "IR Iran", away: "New Zealand" },
+    { id: 37, group: "G", home: "Egypt", away: "New Zealand" }, { id: 38, group: "G", home: "Belgium", away: "IR Iran" },
+    { id: 61, group: "G", home: "Egypt", away: "IR Iran" }, { id: 62, group: "G", home: "New Zealand", away: "Belgium" },
+    
+    { id: 15, group: "H", home: "Spain", away: "Uruguay" }, { id: 16, group: "H", home: "Saudi Arabia", away: "Cabo Verde" },
+    { id: 39, group: "H", home: "Uruguay", away: "Cabo Verde" }, { id: 40, group: "H", home: "Spain", away: "Saudi Arabia" },
+    { id: 63, group: "H", home: "Uruguay", away: "Saudi Arabia" }, { id: 64, group: "H", home: "Cabo Verde", away: "Spain" },
+    
+    { id: 17, group: "I", home: "France", away: "Senegal" }, { id: 18, group: "I", home: "Iraq", away: "Norway" },
+    { id: 41, group: "I", home: "Senegal", away: "Norway" }, { id: 42, group: "I", home: "France", away: "Iraq" },
+    { id: 65, group: "I", home: "Senegal", away: "Iraq" }, { id: 66, group: "I", home: "Norway", away: "France" },
+    
+    { id: 19, group: "J", home: "Argentina", away: "Algeria" }, { id: 20, group: "J", home: "Austria", away: "Jordan" },
+    { id: 43, group: "J", home: "Algeria", away: "Jordan" }, { id: 44, group: "J", home: "Argentina", away: "Austria" },
+    { id: 67, group: "J", home: "Algeria", away: "Austria" }, { id: 68, group: "J", home: "Jordan", away: "Argentina" },
+    
+    { id: 21, group: "K", home: "Portugal", away: "Colombia" }, { id: 22, group: "K", home: "Uzbekistan", away: "Congo DR" },
+    { id: 45, group: "K", home: "Colombia", away: "Congo DR" }, { id: 46, group: "K", home: "Portugal", away: "Uzbekistan" },
+    { id: 69, group: "K", home: "Colombia", away: "Uzbekistan" }, { id: 70, group: "K", home: "Congo DR", away: "Portugal" },
+    
+    { id: 23, group: "L", home: "England", away: "Croatia" }, { id: 24, group: "L", home: "Ghana", away: "Panama" },
+    { id: 47, group: "L", home: "Croatia", away: "Panama" }, { id: 48, group: "L", home: "England", away: "Ghana" },
+    { id: 71, group: "L", home: "Croatia", away: "Ghana" }, { id: 72, group: "L", home: "Panama", away: "England" }
 ];
 
 const koStructure = {
@@ -479,11 +576,13 @@ function initLayoutEngine() {
             `;
         });
     }
+
+    renderParticipantsTable(excelParticipantsData);
 }
 
 function switchMainTab(id, btn) {
     document.querySelectorAll(".btn-main").forEach(b => b.classList.remove("active"));
-    document.querySelectorAll("#group-stage-view, #knockout-bracket-view").forEach(p => p.classList.remove("active"));
+    document.querySelectorAll("#group-stage-view, #knockout-bracket-view, #participants-view").forEach(p => p.classList.remove("active"));
     btn.classList.add("active"); document.getElementById(id).classList.add("active");
 }
 
@@ -493,10 +592,37 @@ function switchSubTab(id, btn, targetClass) {
     btn.classList.add("active"); document.getElementById(id).classList.add("active");
 }
 
+function renderParticipantsTable(dataList) {
+    const tbody = document.getElementById("participants-table-body");
+    tbody.innerHTML = "";
+    dataList.forEach(row => {
+        tbody.innerHTML += `
+            <tr>
+                <td class="fw-bold">Group ${row.group}</td>
+                <td class="text-left fw-bold" style="display: flex; align-items: center; gap: 8px;">
+                    ${getFlagImgTag(row.country)} ${row.country}
+                </td>
+                <td>${row.normPts}</td>
+                <td>#${row.rank}</td>
+                <td>${row.totalPts}</td>
+            </tr>
+        `;
+    });
+}
+
+function filterParticipantsTable() {
+    const query = document.getElementById("participant-search").value.toLowerCase();
+    const filtered = excelParticipantsData.filter(item => 
+        item.country.toLowerCase().includes(query) || 
+        item.group.toLowerCase().includes(query)
+    );
+    renderParticipantsTable(filtered);
+    document.getElementById("participant-count").innerText = `Showing ${filtered.length} teams`;
+}
+
 function runGlobalEngine() {
     resetTeamsMemory();
     
-    // Read centralized dashboard object states to format frontend views
     groupMatches.forEach(m => {
         const hVal = mymatchResults[`g-m-${m.id}-h`];
         const aVal = mymatchResults[`g-m-${m.id}-a`];
