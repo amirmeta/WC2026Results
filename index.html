@@ -46,6 +46,7 @@
         
         .tab-panel { display: none; }
         .tab-panel.active { display: block; }
+        .tab-panel.g-sub-panel.active { display: grid; } /* Restores structural layouts */
 
         .group-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 25px; }
         .bracket-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
@@ -170,7 +171,6 @@
 <script>
 /**
  * 📊 EXCEL SEED DATA FOR PARTICIPANTS TAB
- * Re-aligned matching the official 48-team grouping configuration.
  */
 const excelParticipantsData = [
     { group: "A", country: "Mexico (Liridon UNDP)", normPts: "42.85", rank: 16, totalPts: "1675.75" },
@@ -330,48 +330,6 @@ const mymatchResults = {
     "g-m-48-h": "", "g-m-48-a": "",   // England vs Ghana
     "g-m-71-h": "", "g-m-71-a": "",   // Croatia vs Ghana
     "g-m-72-h": "", "g-m-72-a": "",   // Panama vs England
-
-    // Knockouts Round of 32
-    "ko-in-73-h": "", "ko-in-73-a": "", "ko-pk-73-h": "", "ko-pk-73-a": "",
-    "ko-in-74-h": "", "ko-in-74-a": "", "ko-pk-74-h": "", "ko-pk-74-a": "",
-    "ko-in-75-h": "", "ko-in-75-a": "", "ko-pk-75-h": "", "ko-pk-75-a": "",
-    "ko-in-76-h": "", "ko-in-76-a": "", "ko-pk-76-h": "", "ko-pk-76-a": "",
-    "ko-in-77-h": "", "ko-in-77-a": "", "ko-pk-77-h": "", "ko-pk-77-a": "",
-    "ko-in-78-h": "", "ko-in-78-a": "", "ko-pk-78-h": "", "ko-pk-78-a": "",
-    "ko-in-79-h": "", "ko-in-79-a": "", "ko-pk-79-h": "", "ko-pk-79-a": "",
-    "ko-in-80-h": "", "ko-in-80-a": "", "ko-pk-80-h": "", "ko-pk-80-a": "",
-    "ko-in-81-h": "", "ko-in-81-a": "", "ko-pk-81-h": "", "ko-pk-81-a": "",
-    "ko-in-82-h": "", "ko-in-82-a": "", "ko-pk-82-h": "", "ko-pk-82-a": "",
-    "ko-in-83-h": "", "ko-in-83-a": "", "ko-pk-83-h": "", "ko-pk-83-a": "",
-    "ko-in-84-h": "", "ko-in-84-a": "", "ko-pk-84-h": "", "ko-pk-84-a": "",
-    "ko-in-85-h": "", "ko-in-85-a": "", "ko-pk-85-h": "", "ko-pk-85-a": "",
-    "ko-in-86-h": "", "ko-in-86-a": "", "ko-pk-86-h": "", "ko-pk-86-a": "",
-    "ko-in-87-h": "", "ko-in-87-a": "", "ko-pk-87-h": "", "ko-pk-87-a": "",
-    "ko-in-88-h": "", "ko-in-88-a": "", "ko-pk-88-h": "", "ko-pk-88-a": "",
-
-    // Round of 16
-    "ko-in-89-h": "", "ko-in-89-a": "", "ko-pk-89-h": "", "ko-pk-89-a": "",
-    "ko-in-90-h": "", "ko-in-90-a": "", "ko-pk-90-h": "", "ko-pk-90-a": "",
-    "ko-in-91-h": "", "ko-in-91-a": "", "ko-pk-91-h": "", "ko-pk-91-a": "",
-    "ko-in-92-h": "", "ko-in-92-a": "", "ko-pk-92-h": "", "ko-pk-92-a": "",
-    "ko-in-93-h": "", "ko-in-93-a": "", "ko-pk-93-h": "", "ko-pk-93-a": "",
-    "ko-in-94-h": "", "ko-in-94-a": "", "ko-pk-94-h": "", "ko-pk-94-a": "",
-    "ko-in-95-h": "", "ko-in-95-a": "", "ko-pk-95-h": "", "ko-pk-95-a": "",
-    "ko-in-96-h": "", "ko-in-96-a": "", "ko-pk-96-h": "", "ko-pk-96-a": "",
-
-    // Quarter-Finals
-    "ko-in-97-h": "", "ko-in-97-a": "", "ko-pk-97-h": "", "ko-pk-97-a": "",
-    "ko-in-98-h": "", "ko-in-98-a": "", "ko-pk-98-h": "", "ko-pk-98-a": "",
-    "ko-in-99-h": "", "ko-in-99-a": "", "ko-pk-99-h": "", "ko-pk-99-a": "",
-    "ko-in-100-h": "", "ko-in-100-a": "", "ko-pk-100-h": "", "ko-pk-100-a": "",
-
-    // Semi-Finals
-    "ko-in-101-h": "", "ko-in-101-a": "", "ko-pk-101-h": "", "ko-pk-101-a": "",
-    "ko-in-102-h": "", "ko-in-102-a": "", "ko-pk-102-h": "", "ko-pk-102-a": "",
-
-    // Finals
-    "ko-in-103-h": "", "ko-in-103-a": "", "ko-pk-103-h": "", "ko-pk-103-a": "",
-    "ko-in-104-h": "", "ko-in-104-a": "", "ko-pk-104-h": "", "ko-pk-104-a": ""
 };
 
 const countryISO2 = {
@@ -587,9 +545,13 @@ function switchMainTab(id, btn) {
 }
 
 function switchSubTab(id, btn, targetClass) {
+    // Selects and hides all panels matching the subnav scope
     document.querySelectorAll(`.${targetClass}`).forEach(p => p.classList.remove("active"));
+    // Deactivates buttons in the same container bar
     btn.parentElement.querySelectorAll("button").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active"); document.getElementById(id).classList.add("active");
+    // Activates target node elements
+    btn.classList.add("active"); 
+    document.getElementById(id).classList.add("active");
 }
 
 function renderParticipantsTable(dataList) {
