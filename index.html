@@ -46,7 +46,10 @@
         
         .tab-panel { display: none; }
         .tab-panel.active { display: block; }
-        .tab-panel.g-sub-panel.active { display: grid; } /* Restores structural layouts */
+        
+        /* Ensures correct CSS layout styles when active */
+        .g-sub-panel.active { display: grid !important; }
+        .bracket-grid.active { display: grid !important; }
 
         .group-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 25px; }
         .bracket-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
@@ -110,7 +113,6 @@
     <button class="btn-main" onclick="switchMainTab('participants-view', this)">Participants</button>
 </div>
 
-<!-- CONTAINER 1: GROUP STAGE MASTER PANEL -->
 <div id="group-stage-view" class="tab-panel active">
     <div class="tabs-sub" id="group-subnav-container"></div>
     <div id="group-content-container"></div>
@@ -128,7 +130,6 @@
     </div>
 </div>
 
-<!-- CONTAINER 2: KNOCKOUT BRACKET MASTER PANEL -->
 <div id="knockout-bracket-view" class="tab-panel">
     <div class="tabs-sub">
         <button class="btn-sub active" onclick="switchSubTab('ko-r32', this, 'ko-sub-panel')">Round of 32</button>
@@ -145,7 +146,6 @@
     <div id="ko-finals" class="tab-panel ko-sub-panel group-grid"></div>
 </div>
 
-<!-- CONTAINER 3: PARTICIPANTS EXCEL TAB PANEL -->
 <div id="participants-view" class="tab-panel">
     <div class="card">
         <h2>Tournament Participants Ranking Dataset</h2>
@@ -545,13 +545,22 @@ function switchMainTab(id, btn) {
 }
 
 function switchSubTab(id, btn, targetClass) {
-    // Selects and hides all panels matching the subnav scope
-    document.querySelectorAll(`.${targetClass}`).forEach(p => p.classList.remove("active"));
-    // Deactivates buttons in the same container bar
+    // Selects and completely hides all sibling sub-panels matching the configuration class scope
+    document.querySelectorAll(`.${targetClass}`).forEach(p => {
+        p.classList.remove("active");
+        p.style.display = "none";
+    });
+    
+    // Deactivates any styling adjustments for neighbor tabs in the active panel segment
     btn.parentElement.querySelectorAll("button").forEach(b => b.classList.remove("active"));
-    // Activates target node elements
+    
+    // Mount visibility and display structures natively onto the target container element
     btn.classList.add("active"); 
-    document.getElementById(id).classList.add("active");
+    const targetElement = document.getElementById(id);
+    if (targetElement) {
+        targetElement.classList.add("active");
+        targetElement.style.display = "grid"; 
+    }
 }
 
 function renderParticipantsTable(dataList) {
