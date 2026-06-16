@@ -137,6 +137,37 @@
             display: inline-block;
             vertical-align: middle;
         }
+        /* World Cup Trophy Header Image Styling */
+header {
+    position: relative; /* Allows absolute positioning relative to the header container */
+    padding-right: 100px; /* Prevents text from overlapping the image on smaller screens */
+}
+
+.header-trophy {
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+    height: 70px; /* Scales neatly within the header height */
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.3)); /* Adds depth over the dark blue background */
+}
+
+@media (max-width: 480px) {
+    header {
+        padding-right: 20px;
+    }
+    .header-trophy {
+        position: relative;
+        transform: none;
+        top: 0;
+        right: 0;
+        margin-top: 15px;
+        display: block;
+        height: 60px;
+    }
+}
     </style>
 </head>
 <body>
@@ -144,6 +175,7 @@
 <header>
     <h1>FIFA WORLD CUP 2026 Official Tournament Dashboard</h1>
     <p>Live standings, scores, brackets, and team configurations managed directly by the tournament coordinator.</p>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/a/a7/FIFA_World_Cup_Tr_Copy.jpg" class="header-trophy" alt="FIFA World Cup Trophy">
 </header>
 
 <div class="tabs-main">
