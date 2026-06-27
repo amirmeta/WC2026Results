@@ -187,6 +187,7 @@ header {
     <button class="btn-main active" onclick="switchMainTab('group-stage-view', this)">Group Stage Pool Phase</button>
     <button class="btn-main" onclick="switchMainTab('knockout-bracket-view', this)">Knockout Final Phase Bracket</button>
     <button class="btn-main" onclick="switchMainTab('participants-view', this)">Participants</button>
+    <button class="btn-main" onclick="switchMainTab('cards-view', this)">Cards Tracker</button>
 </div>
 
 <div id="group-stage-view" class="tab-panel active">
@@ -240,6 +241,25 @@ header {
                 </tr>
             </thead>
             <tbody id="participants-table-body"></tbody>
+        </table>
+    </div>
+</div>
+    <div id="cards-view" class="tab-panel">
+    <div class="card">
+        <h2>Disciplinary Points Tracker (Fair Play)</h2>
+        <p class="text-muted">Track team bookings. Yellow card = 1 pt, Second Yellow (Indirect Red) = 3 pts, Direct Red = 4 pts. Fewer points improve tiebreaker rank.</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Group</th>
+                    <th class="text-left">Country</th>
+                    <th>🟨 Yellow Cards</th>
+                    <th>🟥 Red Cards</th>
+                    <th>Total Disciplinary Points</th>
+                </tr>
+            </thead>
+            <tbody id="cards-table-body">
+                </tbody>
         </table>
     </div>
 </div>
