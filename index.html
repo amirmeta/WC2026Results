@@ -431,48 +431,33 @@ const groupMatches = [
 ];
 
 const koStructure = {
-    r32: [
-        { id: 73, label: "Match 73", h: "Mexico (Liridon UNDP)", a: "Switzerland (Besnik UNFPA)" },
-        { id: 74, label: "Match 74", h: "Germany (Marta)", a: "Sweden (Denion UNDP)" },
-        { id: 75, label: "Match 75", h: "Netherlands (Vjosa UNDCO)", a: "Morocco (Florent)" },
-        { id: 76, label: "Match 76", h: "Brazil (Blerta)", a: "Paraguay (Donika UNFPA)" },
-        { id: 77, label: "Match 77", h: "France (Merita UNDP)", a: "Czechia (Nuno UNDP)" },
-        { id: 78, label: "Match 78", h: "Canada (Milanka UNHCR)", a: "Australia (Jeton UNFPA)" },
-        { id: 79, label: "Match 79", h: "United States (Valza)", a: "Norway (Visare UNFPA)" },
-        { id: 80, label: "Match 80", h: "Belgium (Zarife UNFPA)", a: "Ecuador (Ajla)" },
-        { id: 81, label: "Match 81", h: "Spain (Arton UNDP)", a: "Tunisia (Mentor UNDP)" },
-        { id: 82, label: "Match 82", h: "England (Lorik UNDCO)", a: "Côte d'Ivoire (Armenda)" },
-        { id: 83, label: "Match 83", h: "Colombia (Blend UNDP)", a: "Croatia (Shpend UNDCO)" },
-        { id: 84, label: "Match 84", h: "Argentina (Gresa UNDP)", a: "Uzbekistan (Alban UNOPS)" },
-        { id: 85, label: "Match 85", h: "Austria (Dian UNDP)", a: "Uruguay (Mailiss UNDCO)" },
-        { id: 86, label: "Match 86", h: "Japan (Dudley UNDP)", a: "Türkiye (Fjolla)" },
-        { id: 87, label: "Match 87", h: "Portugal (Merita UNHCR)", a: "Senegal (Valbona UNDP)" },
-        { id: 88, label: "Match 88", h: "Egypt (Nexhat UNDP)", a: "IR Iran (Agim Deliaj)" }
-    ],
-    r16: [
-        { id: 89, label: "Match 89", h: "Winner Match 73", a: "Winner Match 74" },
-        { id: 90, label: "Match 90", h: "Winner Match 75", a: "Winner Match 76" },
-        { id: 91, label: "Match 91", h: "Winner Match 77", a: "Winner Match 78" },
-        { id: 92, label: "Match 92", h: "Winner Match 79", a: "Winner Match 80" },
-        { id: 93, label: "Match 93", h: "Winner Match 81", a: "Winner Match 82" },
-        { id: 94, label: "Match 94", h: "Winner Match 83", a: "Winner Match 84" },
-        { id: 95, label: "Match 95", h: "Winner Match 85", a: "Winner Match 86" },
-        { id: 96, label: "Match 96", h: "Winner Match 87", a: "Winner Match 88" }
-    ],
-    qf: [
-        { id: 97, label: "Quarter-Final 1", h: "Winner Match 89", a: "Winner Match 90" },
-        { id: 98, label: "Quarter-Final 2", h: "Winner Match 91", a: "Winner Match 92" },
-        { id: 99, label: "Quarter-Final 3", h: "Winner Match 93", a: "Winner Match 94" },
-        { id: 100, label: "Quarter-Final 4", h: "Winner Match 95", a: "Winner Match 96" }
-    ],
-    sf: [
-        { id: 101, label: "Semi-Final 1", h: "Winner QF 1", a: "Winner QF 2" },
-        { id: 102, label: "Semi-Final 2", h: "Winner QF 3", a: "Winner QF 4" }
-    ],
-    finals: [
-        { id: 103, label: "3rd Place Playoff", h: "Loser SF 1", a: "Loser SF 2" },
-        { id: 104, label: "World Cup Grand Final", h: "Winner SF 1", a: "Winner SF 2" }
-    ]
+r32: [
+{ id: 73, name: "Match 73", sH: "A2", sA: "B2" }, { id: 74, name: "Match 74", sH: "E1", sA: "WC" },
+{ id: 75, name: "Match 75", sH: "F1", sA: "C2" }, { id: 76, name: "Match 76", sH: "C1", sA: "WC" },
+{ id: 77, name: "Match 77", sH: "I1", sA: "WC" }, { id: 78, name: "Match 78", sH: "B1", sA: "WC" },
+{ id: 79, name: "Match 79", sH: "D1", sA: "WC" }, { id: 80, name: "Match 80", sH: "G1", sA: "WC" },
+{ id: 81, name: "Match 81", sH: "A1", sA: "WC" }, { id: 82, name: "Match 82", sH: "L1", sA: "E2" },
+{ id: 83, name: "Match 83", sH: "K2", sA: "L2" }, { id: 84, name: "Match 84", sH: "H1", sA: "J2" },
+{ id: 85, name: "Match 85", sH: "J1", sA: "H2" }, { id: 86, name: "Match 86", sH: "D2", sA: "F2" },
+{ id: 87, name: "Match 87", sH: "K1", sA: "I2" }, { id: 88, name: "Match 88", sH: "G2", sA: "C1" }
+],
+r16: [
+{ id: 89, name: "Match 89", sH: "W73", sA: "W74" }, { id: 90, name: "Match 90", sH: "W75", sA: "W76" },
+{ id: 91, name: "Match 91", sH: "W77", sA: "W78" }, { id: 92, name: "Match 92", sH: "W79", sA: "W80" },
+{ id: 93, name: "Match 93", sH: "W81", sA: "W82" }, { id: 94, name: "Match 94", sH: "W83", sA: "W84" },
+{ id: 95, name: "Match 95", sH: "W85", sA: "W86" }, { id: 96, name: "Match 96", sH: "W87", sA: "W88" }
+],
+qf: [
+{ id: 97, name: "Match 97", sH: "W89", sA: "W90" }, { id: 98, name: "Match 98", sH: "W91", sA: "W92" },
+{ id: 99, name: "Match 99", sH: "W93", sA: "W94" }, { id: 100, name: "Match 100", sH: "W95", sA: "W96" }
+],
+sf: [
+{ id: 101, name: "Match 101", sH: "W97", sA: "W98" }, { id: 102, name: "Match 102", sH: "W99", sA: "W100" }
+],
+finals: [
+{ id: 103, name: "Third Place Playoff", sH: "L101", sA: "L102" },
+{ id: 104, name: "World Cup Final Match", sH: "W101", sA: "W102" }
+]
 };
 
 let groupRanksCache = {};
