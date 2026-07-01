@@ -137,19 +137,93 @@ object-fit: contain;
 filter: drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.3));
 }
 @media (max-width: 480px) {
-header {
-padding-right: 20px;
+header { padding-right: 20px; }
+.header-trophy { position: relative; transform: none; top: 0; right: 0; margin-top: 15px; display: block; height: 60px; }
 }
-.header-trophy {
-position: relative;
-transform: none;
-top: 0;
-right: 0;
-margin-top: 15px;
-display: block;
-height: 60px;
+
+/* ── VISUAL BRACKET ── */
+.bk-col {
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
+.bk-col-header {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 6px 8px 10px;
+  border-bottom: 2px solid var(--primary);
+  margin-bottom: 4px;
+  white-space: nowrap;
 }
+.bk-slots {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  position: relative;
+}
+/* Each round column has spacers to vertically centre matches */
+.bk-spacer { flex: 1; }
+.bk-match-wrap {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+/* The connector SVG sits between columns */
+.bk-connectors {
+  width: 28px;
+  overflow: visible;
+  flex-shrink: 0;
+  position: relative;
+}
+.bk-connectors svg {
+  position: absolute;
+  top: 0; left: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+/* Match card */
+.bk-match {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  width: 195px;
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.bk-match-inner { width: 100%; }
+.bk-team {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 7px;
+  font-size: 12px;
+  font-weight: 600;
+  gap: 4px;
+  min-height: 26px;
+  border-bottom: 1px solid var(--border);
+}
+.bk-team:last-child { border-bottom: none; }
+.bk-team.winner { background: rgba(56,161,105,0.10); color: var(--text); }
+.bk-team-name {
+  display: flex; align-items: center; gap: 5px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
+  min-width: 0;
+}
+.bk-score {
+  font-weight: 700; font-size: 13px; min-width: 18px; text-align: right;
+  color: var(--text);
+}
+.bk-pk {
+  font-size: 10px; color: var(--warning); margin-left: 2px; font-weight: 700;
+}
+/* Final column — bigger card */
+.bk-col.final-col .bk-match { width: 210px; }
+.bk-col.final-col .bk-team { min-height: 30px; font-size: 13px; }
 </style>
 </head>
 <body>
@@ -183,18 +257,9 @@ height: 60px;
 </div>
 
 <div id="knockout-bracket-view" class="tab-panel">
-<div class="tabs-sub">
-<button class="btn-sub active" onclick="switchSubTab('ko-r32', this, 'ko-sub-panel')">Round of 32</button>
-<button class="btn-sub" onclick="switchSubTab('ko-r16', this, 'ko-sub-panel')">Round of 16</button>
-<button class="btn-sub" onclick="switchSubTab('ko-qf', this, 'ko-sub-panel')">Quarter-Finals</button>
-<button class="btn-sub" onclick="switchSubTab('ko-sf', this, 'ko-sub-panel')">Semi-Finals</button>
-<button class="btn-sub" onclick="switchSubTab('ko-finals', this, 'ko-sub-panel')">The Finals</button>
+<div style="overflow-x:auto; padding-bottom:20px;">
+<div id="ko-bracket-root" style="position:relative; display:inline-flex; gap:0; min-width:1100px;"></div>
 </div>
-<div id="ko-r32" class="tab-panel ko-sub-panel active bracket-grid"></div>
-<div id="ko-r16" class="tab-panel ko-sub-panel bracket-grid"></div>
-<div id="ko-qf" class="tab-panel ko-sub-panel bracket-grid"></div>
-<div id="ko-sf" class="tab-panel ko-sub-panel bracket-grid"></div>
-<div id="ko-finals" class="tab-panel ko-sub-panel group-grid"></div>
 </div>
 
 <div id="participants-view" class="tab-panel">
@@ -392,13 +457,15 @@ const mymatchResults = {
 "g-m-48-h": "0", "g-m-48-a": "0",
 "g-m-71-h": "2", "g-m-71-a": "1",
 "g-m-72-h": "0", "g-m-72-a": "2",
-// ── Round of 32 results (per ESPN's official bracket) ──
-// Matches 73-76 have been played; 77-88 are still upcoming (Jun 30 - Jul 3)
-// so their scores are intentionally left blank to display "-".
-"ko-in-73-h": "0", "ko-in-73-a": "1",                                          // South Africa 0-1 Canada (FT)
-"ko-in-74-h": "1", "ko-in-74-a": "1", "ko-pk-74-h": "3", "ko-pk-74-a": "4",     // Germany 1(3)-1(4) Paraguay (Pens)
-"ko-in-75-h": "1", "ko-in-75-a": "1", "ko-pk-75-h": "2", "ko-pk-75-a": "3",     // Netherlands 1(2)-1(3) Morocco (Pens)
-"ko-in-76-h": "2", "ko-in-76-a": "1",                                          // Brazil 2-1 Japan (FT)
+// ── Round of 32 results ──
+"ko-in-74-h": "1", "ko-in-74-a": "1", "ko-pk-74-h": "3", "ko-pk-74-a": "4",  // Germany 1(3)-1(4) Paraguay — Pens
+"ko-in-78-h": "3", "ko-in-78-a": "0",                                         // France 3-0 Sweden — FT
+"ko-in-73-h": "0", "ko-in-73-a": "1",                                         // South Africa 0-1 Canada — FT
+"ko-in-75-h": "1", "ko-in-75-a": "1", "ko-pk-75-h": "2", "ko-pk-75-a": "3",  // Netherlands 1(2)-1(3) Morocco — Pens
+"ko-in-76-h": "2", "ko-in-76-a": "1",                                         // Brazil 2-1 Japan — FT
+"ko-in-77-h": "1", "ko-in-77-a": "2",                                         // Ivory Coast 1-2 Norway — FT
+"ko-in-79-h": "2", "ko-in-79-a": "0",                                         // Mexico 2-0 Ecuador — FT
+// Matches 80-88 not yet played — leave blank so bracket shows "-"
 };
 
 const countryISO2 = {
@@ -472,58 +539,79 @@ const groupMatches = [
 { id: 71, group: "L", home: "Croatia", away: "Ghana" }, { id: 72, group: "L", home: "Panama", away: "England" }
 ];
 
+// koStructure — bracket row order matches Flashscore image top→bottom exactly.
+// Adjacent pairs of R32 rows feed into the same R16 slot:
+//   rows 1+2  (74,78)  → R16-89  (Paraguay vs France)
+//   rows 3+4  (73,75)  → R16-90  (Canada vs Morocco)
+//   rows 5+6  (85,84)  → R16-91  (Portugal/Croatia vs Spain/Austria)
+//   rows 7+8  (82,81)  → R16-92  (USA/Bosnia vs Belgium/Senegal)
+//   rows 9+10 (76,77)  → R16-93  (Brazil vs Norway)
+//   rows 11+12(79,80)  → R16-94  (Mexico vs England/Congo)
+//   rows 13+14(87,86)  → R16-95  (Argentina/CV vs Australia/Egypt)
+//   rows 15+16(88,83)  → R16-96  (Switzerland/Algeria vs Colombia/Ghana)
 const koStructure = {
 r32: [
-{ id: 73, name: "Match 73", sH: "A2", sA: "B2" }, { id: 74, name: "Match 74", sH: "E1", sA: "WC" },
-{ id: 75, name: "Match 75", sH: "F1", sA: "C2" }, { id: 76, name: "Match 76", sH: "C1", sA: "WC" },
-{ id: 77, name: "Match 77", sH: "I1", sA: "WC" }, { id: 78, name: "Match 78", sH: "B1", sA: "WC" },
-{ id: 79, name: "Match 79", sH: "D1", sA: "WC" }, { id: 80, name: "Match 80", sH: "G1", sA: "WC" },
-{ id: 81, name: "Match 81", sH: "A1", sA: "WC" }, { id: 82, name: "Match 82", sH: "L1", sA: "E2" },
-{ id: 83, name: "Match 83", sH: "K2", sA: "L2" }, { id: 84, name: "Match 84", sH: "H1", sA: "J2" },
-{ id: 85, name: "Match 85", sH: "J1", sA: "H2" }, { id: 86, name: "Match 86", sH: "D2", sA: "F2" },
-{ id: 87, name: "Match 87", sH: "K1", sA: "I2" }, { id: 88, name: "Match 88", sH: "G2", sA: "C1" }
+{ id: 74, name: "Match 74" }, // row 1  — Germany vs Paraguay
+{ id: 78, name: "Match 78" }, // row 2  — France vs Sweden
+{ id: 73, name: "Match 73" }, // row 3  — South Africa vs Canada
+{ id: 75, name: "Match 75" }, // row 4  — Netherlands vs Morocco
+{ id: 85, name: "Match 85" }, // row 5  — Portugal vs Croatia
+{ id: 84, name: "Match 84" }, // row 6  — Spain vs Austria
+{ id: 82, name: "Match 82" }, // row 7  — USA vs Bosnia & Herzegovina
+{ id: 81, name: "Match 81" }, // row 8  — Belgium vs Senegal
+{ id: 76, name: "Match 76" }, // row 9  — Brazil vs Japan
+{ id: 77, name: "Match 77" }, // row 10 — Ivory Coast vs Norway
+{ id: 79, name: "Match 79" }, // row 11 — Mexico vs Ecuador
+{ id: 80, name: "Match 80" }, // row 12 — England vs Congo DR
+{ id: 87, name: "Match 87" }, // row 13 — Argentina vs Cabo Verde
+{ id: 86, name: "Match 86" }, // row 14 — Australia vs Egypt
+{ id: 88, name: "Match 88" }, // row 15 — Switzerland vs Algeria
+{ id: 83, name: "Match 83" }, // row 16 — Colombia vs Ghana
 ],
 r16: [
-{ id: 89, name: "Match 89", sH: "W73", sA: "W74" }, { id: 90, name: "Match 90", sH: "W75", sA: "W76" },
-{ id: 91, name: "Match 91", sH: "W77", sA: "W78" }, { id: 92, name: "Match 92", sH: "W79", sA: "W80" },
-{ id: 93, name: "Match 93", sH: "W81", sA: "W82" }, { id: 94, name: "Match 94", sH: "W83", sA: "W84" },
-{ id: 95, name: "Match 95", sH: "W85", sA: "W86" }, { id: 96, name: "Match 96", sH: "W87", sA: "W88" }
+{ id: 89, name: "Match 89", sH: "W74", sA: "W78" }, // Paraguay vs France   (06.07 21:00 per image)
+{ id: 90, name: "Match 90", sH: "W73", sA: "W75" }, // Canada vs Morocco    (07.07 02:00)
+{ id: 91, name: "Match 91", sH: "W85", sA: "W84" }, // Portugal/C vs Spain/A (06.07 21:00 / lower)
+{ id: 92, name: "Match 92", sH: "W82", sA: "W81" }, // USA/B vs Belgium/S   (07.07 02:00)
+{ id: 93, name: "Match 93", sH: "W76", sA: "W77" }, // Brazil vs Norway     (06.07 02:00 per image)
+{ id: 94, name: "Match 94", sH: "W79", sA: "W80" }, // Mexico vs England    (07.07 18:00)
+{ id: 95, name: "Match 95", sH: "W87", sA: "W86" }, // Argentina vs Australia (07.07 22:00)
+{ id: 96, name: "Match 96", sH: "W88", sA: "W83" }, // Switzerland vs Colombia
 ],
 qf: [
-{ id: 97, name: "Match 97", sH: "W89", sA: "W90" }, { id: 98, name: "Match 98", sH: "W91", sA: "W92" },
-{ id: 99, name: "Match 99", sH: "W93", sA: "W94" }, { id: 100, name: "Match 100", sH: "W95", sA: "W96" }
+{ id: 97, name: "Match 97", sH: "W89", sA: "W90" }, // 09.07 22:00
+{ id: 98, name: "Match 98", sH: "W91", sA: "W92" }, // 10.07 21:00
+{ id: 99, name: "Match 99", sH: "W93", sA: "W94" }, // 11.07 23:00
+{ id: 100, name: "Match 100", sH: "W95", sA: "W96" }, // 12.07 03:00
 ],
 sf: [
-{ id: 101, name: "Match 101", sH: "W97", sA: "W98" }, { id: 102, name: "Match 102", sH: "W99", sA: "W100" }
+{ id: 101, name: "Match 101", sH: "W97", sA: "W98" }, // 14.07 21:00
+{ id: 102, name: "Match 102", sH: "W99", sA: "W100" }, // 15.07 21:00
 ],
 finals: [
-{ id: 103, name: "Third Place Playoff", sH: "L101", sA: "L102" },
-{ id: 104, name: "World Cup Final Match", sH: "W101", sA: "W102" }
+{ id: 103, name: "Third Place Playoff", sH: "L101", sA: "L102" }, // 18.07 23:00
+{ id: 104, name: "World Cup Final Match", sH: "W101", sA: "W102" } // 19.07 21:00
 ]
 };
 
-// ✅ Real-world Round of 32 matchups (per ESPN's official bracket, which is
-// the authoritative source for match-id-to-team mapping). This overrides the
-// auto-computed group-position/wildcard pairing so the bracket always
-// reflects the actual announced fixtures rather than a generic "A2 vs B2"
-// placeholder logic.
+// Teams per match id — verified from ESPN bracket + Flashscore image (rows 1-16 top→bottom)
 const r32FixedTeams = {
-73: { h: "South Africa",  a: "Canada" },                   // Sun 28 Jun — FT
-74: { h: "Germany",       a: "Paraguay" },                  // Mon 29 Jun 16:30 — FT-Pens
-75: { h: "Netherlands",   a: "Morocco" },                   // Mon 29 Jun 21:00 — FT-Pens
-76: { h: "Brazil",        a: "Japan" },                     // Mon 29 Jun 13:00 — FT
-77: { h: "Côte d'Ivoire", a: "Norway" },                    // Tue 30 Jun 13:00
-78: { h: "France",        a: "Sweden" },                    // Tue 30 Jun 17:00
-79: { h: "Mexico",        a: "Ecuador" },                   // Tue 30 Jun 21:00
-80: { h: "England",       a: "Congo DR" },                  // Wed 01 Jul 12:00
-81: { h: "Belgium",       a: "Senegal" },                   // Wed 01 Jul 16:00
-82: { h: "United States", a: "Bosnia and Herzegovina" },    // Wed 01 Jul 20:00
-83: { h: "Switzerland",   a: "Algeria" },                   // Thu 02 Jul 23:00
-84: { h: "Spain",         a: "Austria" },                   // Thu 02 Jul 15:00
-85: { h: "Portugal",      a: "Croatia" },                   // Thu 02 Jul 19:00
-86: { h: "Australia",     a: "Egypt" },                     // Fri 03 Jul 14:00
-87: { h: "Argentina",     a: "Cabo Verde" },                // Fri 03 Jul 18:00
-88: { h: "Colombia",      a: "Ghana" }                      // Fri 03 Jul 21:30
+74: { h: "Germany",               a: "Paraguay" },        // row 1  — FT-Pens 1(3)-1(4)
+78: { h: "France",                a: "Sweden" },          // row 2  — FT 3-0
+73: { h: "South Africa",          a: "Canada" },          // row 3  — FT 0-1
+75: { h: "Netherlands",           a: "Morocco" },         // row 4  — FT-Pens 1(2)-1(3)
+85: { h: "Portugal",              a: "Croatia" },         // row 5
+84: { h: "Spain",                 a: "Austria" },         // row 6
+82: { h: "United States",         a: "Bosnia and Herzegovina" }, // row 7
+81: { h: "Belgium",               a: "Senegal" },         // row 8
+76: { h: "Brazil",                a: "Japan" },           // row 9  — FT 2-1
+77: { h: "Côte d'Ivoire",         a: "Norway" },          // row 10 — FT 1-2
+79: { h: "Mexico",                a: "Ecuador" },         // row 11 — FT 2-0
+80: { h: "England",               a: "Congo DR" },        // row 12
+87: { h: "Argentina",             a: "Cabo Verde" },      // row 13
+86: { h: "Australia",             a: "Egypt" },           // row 14
+88: { h: "Switzerland",           a: "Algeria" },         // row 15
+83: { h: "Colombia",              a: "Ghana" }            // row 16
 };
 
 let groupRanksCache = {};
@@ -588,30 +676,7 @@ div.innerHTML += `
 }
 });
 
-for(let keys in koStructure) {
-let container = document.getElementById(`ko-${keys}`);
-koStructure[keys].forEach(m => {
-container.innerHTML += `
-<div class="ko-card">
-<div class="ko-meta">${m.name}</div>
-<div class="ko-team-row">
-<span id="ko-lbl-${m.id}-h" class="ko-team-name">TBD</span>
-<div style="display: flex; align-items: center;">
-<div class="score-display" id="ko-in-${m.id}-h">-</div>
-<span id="ko-pk-disp-${m.id}-h"></span>
-</div>
-</div>
-<div class="ko-team-row">
-<span id="ko-lbl-${m.id}-a" class="ko-team-name">TBD</span>
-<div style="display: flex; align-items: center;">
-<div class="score-display" id="ko-in-${m.id}-a">-</div>
-<span id="ko-pk-disp-${m.id}-a"></span>
-</div>
-</div>
-</div>
-`;
-});
-}
+buildVisualBracket();
 
 renderParticipantsTable(excelParticipantsData);
 }
@@ -710,11 +775,11 @@ knockoutState = {};
 const phases = ["r32", "r16", "qf", "sf", "finals"];
 let wcCounter = 0;
 
-phases.forEach(p => {
+// Pass 1: resolve r32 teams and scores → populate knockoutState
+["r32","r16","qf","sf","finals"].forEach(p => {
 koStructure[p].forEach(m => {
 let sideH = "TBD", sideA = "TBD";
 if(p === "r32") {
-// ✅ Use the fixed real-world matchup map instead of computed group positions
 const fixed = r32FixedTeams[m.id];
 sideH = fixed ? fixed.h : "TBD";
 sideA = fixed ? fixed.a : "TBD";
@@ -722,38 +787,27 @@ sideA = fixed ? fixed.a : "TBD";
 sideH = parseKnockoutSlot(m.sH);
 sideA = parseKnockoutSlot(m.sA);
 }
-
-document.getElementById(`ko-lbl-${m.id}-h`).innerHTML = `${getFlagImgTag(sideH)} <span>${sideH}</span>`;
-document.getElementById(`ko-lbl-${m.id}-a`).innerHTML = `${getFlagImgTag(sideA)} <span>${sideA}</span>`;
-
-// ✅ FIX: use getScore() so missing keys return null instead of undefined,
-//         preventing "undefined" from being displayed in the score boxes.
 const hSc = getScore(`ko-in-${m.id}-h`);
 const aSc = getScore(`ko-in-${m.id}-a`);
 const hpk = getScore(`ko-pk-${m.id}-h`);
 const apk = getScore(`ko-pk-${m.id}-a`);
-
-document.getElementById(`ko-in-${m.id}-h`).innerText = hSc !== null ? hSc : "-";
-document.getElementById(`ko-in-${m.id}-a`).innerText = aSc !== null ? aSc : "-";
-document.getElementById(`ko-pk-disp-${m.id}-h`).innerHTML = hpk !== null ? `<span class="pk-display">(${hpk})</span>` : "";
-document.getElementById(`ko-pk-disp-${m.id}-a`).innerHTML = apk !== null ? `<span class="pk-display">(${apk})</span>` : "";
-
 if(hSc !== null && aSc !== null && sideH !== "TBD" && sideA !== "TBD") {
 const hg = parseInt(hSc), ag = parseInt(aSc);
 let winner = "", loser = "";
 if(hg > ag) { winner = sideH; loser = sideA; }
 else if(ag > hg) { winner = sideA; loser = sideH; }
 else {
-const hPkVal = parseInt(hpk || 0);
-const aPkVal = parseInt(apk || 0);
-if(hPkVal > aPkVal) { winner = sideH; loser = sideA; }
-else { winner = sideA; loser = sideH; }
+const hPkVal = parseInt(hpk || 0), aPkVal = parseInt(apk || 0);
+winner = hPkVal > aPkVal ? sideH : sideA;
+loser  = hPkVal > aPkVal ? sideA : sideH;
 }
 knockoutState[`W${m.id}`] = winner;
 knockoutState[`L${m.id}`] = loser;
 }
 });
 });
+// Pass 2: update visual bracket DOM
+updateVisualBracket();
 }
 
 function parseGroupCoord(coord) {
@@ -795,6 +849,207 @@ ${getFlagImgTag(t.name)} ${t.name}
 </td>
 <td>${t.mp}</td><td>${t.w}</td><td>${t.d}</td><td>${t.l}</td><td>${t.gf}</td><td>${t.ga}</td><td>${t.gd}</td><td class="fw-bold">${t.pts}</td>
 </tr>`;
+});
+}
+
+// ── VISUAL BRACKET BUILDER ──────────────────────────────────────────────────
+// Layout: R32 (16 matches) → R16 (8) → QF (4) → SF (2) → Final+3rd (2)
+// Each column has a connector SVG strip on its right side that draws lines
+// linking adjacent pair winners into the next round.
+
+const MATCH_H = 56;   // px height of one match card (2 teams × 26px + border)
+const GAP = 10;       // px gap between match cards within a column
+
+// Column definitions: [phase key, label, # matches]
+const BK_COLS = [
+{ p: "r32",    label: "Round of 32",   count: 16 },
+{ p: "r16",    label: "Round of 16",   count: 8  },
+{ p: "qf",     label: "Quarter-Finals",count: 4  },
+{ p: "sf",     label: "Semi-Finals",   count: 2  },
+{ p: "finals", label: "Final",         count: 2  },
+];
+
+function matchMidY(colCount, idx, totalH) {
+// vertical centre of match #idx in a column of colCount matches
+// matches are evenly distributed over totalH
+const slotH = totalH / colCount;
+return slotH * idx + slotH / 2;
+}
+
+function buildVisualBracket() {
+const root = document.getElementById("ko-bracket-root");
+if(!root) return;
+root.innerHTML = "";
+
+// Total height = tallest column = R32 with 16 matches
+const totalH = 16 * MATCH_H + 15 * GAP + 40; // +40 for header
+
+BK_COLS.forEach((col, ci) => {
+// ── match column ──
+const colEl = document.createElement("div");
+colEl.className = "bk-col" + (col.p === "finals" ? " final-col" : "");
+colEl.style.cssText = `width:${col.p==="finals"?210:195}px; height:${totalH}px; position:relative; flex-shrink:0;`;
+
+const hdr = document.createElement("div");
+hdr.className = "bk-col-header";
+hdr.textContent = col.label;
+colEl.appendChild(hdr);
+
+const hdrH = 36; // approx header height
+const usableH = totalH - hdrH;
+
+koStructure[col.p].forEach((m, mi) => {
+const slotH = usableH / col.count;
+const topPx = hdrH + slotH * mi + (slotH - MATCH_H) / 2;
+
+const wrap = document.createElement("div");
+wrap.style.cssText = `position:absolute; top:${topPx}px; left:0; right:0; display:flex; justify-content:center;`;
+
+wrap.innerHTML = `
+<div class="bk-match" id="bk-match-${m.id}">
+  <div class="bk-team" id="bk-team-${m.id}-h">
+    <span class="bk-team-name" id="bk-lbl-${m.id}-h"><span style="color:var(--text-muted);font-style:italic;font-size:11px;">TBD</span></span>
+    <span class="bk-score" id="bk-sc-${m.id}-h">-</span><span class="bk-pk" id="bk-pk-${m.id}-h"></span>
+  </div>
+  <div class="bk-team" id="bk-team-${m.id}-a">
+    <span class="bk-team-name" id="bk-lbl-${m.id}-a"><span style="color:var(--text-muted);font-style:italic;font-size:11px;">TBD</span></span>
+    <span class="bk-score" id="bk-sc-${m.id}-a">-</span><span class="bk-pk" id="bk-pk-${m.id}-a"></span>
+  </div>
+</div>`;
+colEl.appendChild(wrap);
+});
+root.appendChild(colEl);
+
+// ── connector SVG strip (skip after last col and after SF→finals handled separately) ──
+if(ci < BK_COLS.length - 1) {
+const nextCol = BK_COLS[ci + 1];
+const svgWrap = document.createElement("div");
+svgWrap.style.cssText = `width:28px; height:${totalH}px; position:relative; flex-shrink:0;`;
+const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
+svg.setAttribute("width","28");
+svg.setAttribute("height",totalH);
+svg.style.overflow = "visible";
+
+const lineColor = "var(--border)";
+const hdrH2 = 36;
+const usableH2 = totalH - hdrH2;
+
+// For each match in next column, connect from its two source matches in current col
+nextCol.p !== "finals"
+? (() => {
+koStructure[nextCol.p].forEach((nm, nmi) => {
+// Each R16 match feeds from pair (nmi*2) and (nmi*2+1) of current col
+const srcA = nmi * 2;
+const srcB = nmi * 2 + 1;
+const slotHCur = usableH / col.count;
+const slotHNxt = usableH2 / nextCol.count;
+
+const yA = hdrH2 + slotHCur * srcA + (slotHCur - MATCH_H) / 2 + MATCH_H / 2;
+const yB = hdrH2 + slotHCur * srcB + (slotHCur - MATCH_H) / 2 + MATCH_H / 2;
+const yMid = (yA + yB) / 2;
+const yNxt = hdrH2 + slotHNxt * nmi + (slotHNxt - MATCH_H) / 2 + MATCH_H / 2;
+
+// horizontal stubs right from current col
+line(svg, 0, yA, 14, yA, lineColor);
+line(svg, 0, yB, 14, yB, lineColor);
+// vertical bar joining them
+line(svg, 14, yA, 14, yB, lineColor);
+// horizontal line to next col
+line(svg, 14, yMid, 28, yMid, lineColor);
+// small stub into next col top team
+line(svg, 28, yMid, 28, yNxt, lineColor);
+});
+})()
+: (() => {
+// SF→Finals: 2 SF matches → Final (top) + 3rdPlace (bottom, losers)
+// finals col has 2 entries: [0]=3rd place (losers), [1]=Final (winners)
+// In our koStructure finals = [{id:103, 3rd}, {id:104, Final}]
+// SF matches are koStructure.sf[0] and sf[1]
+const sfCount = koStructure.sf.length; // 2
+const finCount = koStructure.finals.length; // 2
+const slotHCur = usableH / sfCount;
+const slotHNxt = usableH2 / finCount;
+
+// Final (winners): koStructure.finals[1] gets winner of sf[0] and sf[1]
+const yW0 = hdrH2 + slotHCur * 0 + (slotHCur - MATCH_H) / 2 + MATCH_H / 2;
+const yW1 = hdrH2 + slotHCur * 1 + (slotHCur - MATCH_H) / 2 + MATCH_H / 2;
+const yFinal = hdrH2 + slotHNxt * 1 + (slotHNxt - MATCH_H) / 2 + MATCH_H / 2;
+const y3rd   = hdrH2 + slotHNxt * 0 + (slotHNxt - MATCH_H) / 2 + MATCH_H / 2;
+const yWmid = (yW0 + yW1) / 2;
+
+line(svg, 0, yW0, 14, yW0, lineColor);
+line(svg, 0, yW1, 14, yW1, lineColor);
+line(svg, 14, yW0, 14, yW1, lineColor);
+line(svg, 14, yWmid, 28, yFinal, lineColor);
+// 3rd place — losers branch (dashed)
+line(svg, 0, yW0, 8, yW0, lineColor, true);
+line(svg, 0, yW1, 8, yW1, lineColor, true);
+line(svg, 8, yW0, 8, yW1, lineColor, true);
+line(svg, 8, (yW0+yW1)/2, 28, y3rd, lineColor, true);
+})();
+
+svgWrap.appendChild(svg);
+root.appendChild(svgWrap);
+}
+});
+}
+
+function line(svg, x1, y1, x2, y2, color, dashed) {
+const l = document.createElementNS("http://www.w3.org/2000/svg","line");
+l.setAttribute("x1", x1); l.setAttribute("y1", y1);
+l.setAttribute("x2", x2); l.setAttribute("y2", y2);
+l.setAttribute("stroke", color);
+l.setAttribute("stroke-width", "1.5");
+if(dashed) l.setAttribute("stroke-dasharray","4,3");
+svg.appendChild(l);
+}
+
+function updateVisualBracket() {
+["r32","r16","qf","sf","finals"].forEach(p => {
+koStructure[p].forEach(m => {
+let sideH = "TBD", sideA = "TBD";
+if(p === "r32") {
+const fixed = r32FixedTeams[m.id];
+sideH = fixed ? fixed.h : "TBD";
+sideA = fixed ? fixed.a : "TBD";
+} else {
+sideH = parseKnockoutSlot(m.sH);
+sideA = parseKnockoutSlot(m.sA);
+}
+const hSc = getScore(`ko-in-${m.id}-h`);
+const aSc = getScore(`ko-in-${m.id}-a`);
+const hpk = getScore(`ko-pk-${m.id}-h`);
+const apk = getScore(`ko-pk-${m.id}-a`);
+
+const hWin = hSc !== null && aSc !== null && (
+parseInt(hSc) > parseInt(aSc) ||
+(parseInt(hSc) === parseInt(aSc) && parseInt(hpk||0) > parseInt(apk||0))
+);
+const aWin = hSc !== null && aSc !== null && !hWin;
+
+const setTeam = (side, name, score, pk, isWinner) => {
+const lbl = document.getElementById(`bk-lbl-${m.id}-${side}`);
+const sc  = document.getElementById(`bk-sc-${m.id}-${side}`);
+const pkEl = document.getElementById(`bk-pk-${m.id}-${side}`);
+const row  = document.getElementById(`bk-team-${m.id}-${side}`);
+if(!lbl) return;
+if(name && name !== "TBD") {
+lbl.innerHTML = `${getFlagImgTag(name)}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</span>`;
+} else {
+lbl.innerHTML = `<span style="color:var(--text-muted);font-style:italic;font-size:11px;">TBD</span>`;
+}
+if(sc)  sc.textContent  = score !== null ? score : "-";
+if(pkEl) pkEl.textContent = pk !== null ? `(${pk})` : "";
+if(row) {
+row.classList.toggle("winner", isWinner);
+if(hSc !== null && aSc !== null && !isWinner) row.style.opacity = "0.55";
+else row.style.opacity = "";
+}
+};
+
+setTeam("h", sideH, hSc, hpk, hWin);
+setTeam("a", sideA, aSc, apk, aWin);
+});
 });
 }
 
