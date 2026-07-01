@@ -862,11 +862,12 @@ const GAP = 10;       // px gap between match cards within a column
 
 // Column definitions: [phase key, label, # matches]
 const BK_COLS = [
-{ p: "r32",    label: "Round of 32",   count: 16 },
-{ p: "r16",    label: "Round of 16",   count: 8  },
-{ p: "qf",     label: "Quarter-Finals",count: 4  },
-{ p: "sf",     label: "Semi-Finals",   count: 2  },
-{ p: "finals", label: "Final",         count: 2  },
+{ p: "r32",    label: "Round of 32",    count: 16 },
+{ p: "r16",    label: "Round of 16",    count: 8  },
+{ p: "qf",     label: "Quarter-Finals", count: 4  },
+{ p: "sf",     label: "Semi-Finals",    count: 2  },
+{ p: "third",  label: "3rd Place",      count: 1, ids: [103] },
+{ p: "final",  label: "🏆 Final",       count: 1, ids: [104] },
 ];
 
 function matchMidY(colCount, idx, totalH) {
@@ -881,116 +882,110 @@ const root = document.getElementById("ko-bracket-root");
 if(!root) return;
 root.innerHTML = "";
 
-// Total height = tallest column = R32 with 16 matches
-const totalH = 16 * MATCH_H + 15 * GAP + 40; // +40 for header
+// Flatten all KO matches by id for lookup
+const allMatches = {};
+["r32","r16","qf","sf","finals"].forEach(p => koStructure[p].forEach(m => allMatches[m.id] = m));
+
+const totalH = 16 * MATCH_H + 15 * GAP + 40;
+const hdrH = 36;
+const usableH = totalH - hdrH;
+const lineColor = "var(--border)";
 
 BK_COLS.forEach((col, ci) => {
-// ── match column ──
+const isFinalish = col.p === "final" || col.p === "third";
+const colW = isFinalish ? 215 : 195;
 const colEl = document.createElement("div");
-colEl.className = "bk-col" + (col.p === "finals" ? " final-col" : "");
-colEl.style.cssText = `width:${col.p==="finals"?210:195}px; height:${totalH}px; position:relative; flex-shrink:0;`;
+colEl.className = "bk-col" + (isFinalish ? " final-col" : "");
+colEl.style.cssText = `width:${colW}px; height:${totalH}px; position:relative; flex-shrink:0;`;
 
 const hdr = document.createElement("div");
 hdr.className = "bk-col-header";
+hdr.style.borderBottomColor = col.p === "final" ? "#f6c90e" : col.p === "third" ? "#aaa" : "";
 hdr.textContent = col.label;
 colEl.appendChild(hdr);
 
-const hdrH = 36; // approx header height
-const usableH = totalH - hdrH;
+// Get matches for this column
+const matches = col.ids
+? col.ids.map(id => allMatches[id]).filter(Boolean)
+: (koStructure[col.p] || []);
 
-koStructure[col.p].forEach((m, mi) => {
+matches.forEach((m, mi) => {
 const slotH = usableH / col.count;
 const topPx = hdrH + slotH * mi + (slotH - MATCH_H) / 2;
-
 const wrap = document.createElement("div");
 wrap.style.cssText = `position:absolute; top:${topPx}px; left:0; right:0; display:flex; justify-content:center;`;
-
 wrap.innerHTML = `
-<div class="bk-match" id="bk-match-${m.id}">
-  <div class="bk-team" id="bk-team-${m.id}-h">
-    <span class="bk-team-name" id="bk-lbl-${m.id}-h"><span style="color:var(--text-muted);font-style:italic;font-size:11px;">TBD</span></span>
-    <span class="bk-score" id="bk-sc-${m.id}-h">-</span><span class="bk-pk" id="bk-pk-${m.id}-h"></span>
-  </div>
-  <div class="bk-team" id="bk-team-${m.id}-a">
-    <span class="bk-team-name" id="bk-lbl-${m.id}-a"><span style="color:var(--text-muted);font-style:italic;font-size:11px;">TBD</span></span>
-    <span class="bk-score" id="bk-sc-${m.id}-a">-</span><span class="bk-pk" id="bk-pk-${m.id}-a"></span>
-  </div>
+<div class="bk-match" id="bk-match-${m.id}" style="${col.p==='final'?'box-shadow:0 0 0 2px #f6c90e55;':''}">
+<div class="bk-team" id="bk-team-${m.id}-h">
+  <span class="bk-team-name" id="bk-lbl-${m.id}-h"><span style="color:var(--text-muted);font-style:italic;font-size:11px;">TBD</span></span>
+  <span class="bk-score" id="bk-sc-${m.id}-h">-</span><span class="bk-pk" id="bk-pk-${m.id}-h"></span>
+</div>
+<div class="bk-team" id="bk-team-${m.id}-a">
+  <span class="bk-team-name" id="bk-lbl-${m.id}-a"><span style="color:var(--text-muted);font-style:italic;font-size:11px;">TBD</span></span>
+  <span class="bk-score" id="bk-sc-${m.id}-a">-</span><span class="bk-pk" id="bk-pk-${m.id}-a"></span>
+</div>
 </div>`;
 colEl.appendChild(wrap);
 });
 root.appendChild(colEl);
 
-// ── connector SVG strip (skip after last col and after SF→finals handled separately) ──
-if(ci < BK_COLS.length - 1) {
+// ── connector SVG between columns ──
+if(ci >= BK_COLS.length - 1) return; // no connector after last col
+
 const nextCol = BK_COLS[ci + 1];
 const svgWrap = document.createElement("div");
 svgWrap.style.cssText = `width:28px; height:${totalH}px; position:relative; flex-shrink:0;`;
 const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
-svg.setAttribute("width","28");
-svg.setAttribute("height",totalH);
+svg.setAttribute("width","28"); svg.setAttribute("height",totalH);
 svg.style.overflow = "visible";
 
-const lineColor = "var(--border)";
-const hdrH2 = 36;
-const usableH2 = totalH - hdrH2;
-
-// For each match in next column, connect from its two source matches in current col
-nextCol.p !== "finals"
-? (() => {
-koStructure[nextCol.p].forEach((nm, nmi) => {
-// Each R16 match feeds from pair (nmi*2) and (nmi*2+1) of current col
-const srcA = nmi * 2;
-const srcB = nmi * 2 + 1;
-const slotHCur = usableH / col.count;
-const slotHNxt = usableH2 / nextCol.count;
-
-const yA = hdrH2 + slotHCur * srcA + (slotHCur - MATCH_H) / 2 + MATCH_H / 2;
-const yB = hdrH2 + slotHCur * srcB + (slotHCur - MATCH_H) / 2 + MATCH_H / 2;
-const yMid = (yA + yB) / 2;
-const yNxt = hdrH2 + slotHNxt * nmi + (slotHNxt - MATCH_H) / 2 + MATCH_H / 2;
-
-// horizontal stubs right from current col
-line(svg, 0, yA, 14, yA, lineColor);
-line(svg, 0, yB, 14, yB, lineColor);
-// vertical bar joining them
-line(svg, 14, yA, 14, yB, lineColor);
-// horizontal line to next col
-line(svg, 14, yMid, 28, yMid, lineColor);
-// small stub into next col top team
-line(svg, 28, yMid, 28, yNxt, lineColor);
-});
-})()
-: (() => {
-// SF→Finals: 2 SF matches → Final (top) + 3rdPlace (bottom, losers)
-// finals col has 2 entries: [0]=3rd place (losers), [1]=Final (winners)
-// In our koStructure finals = [{id:103, 3rd}, {id:104, Final}]
-// SF matches are koStructure.sf[0] and sf[1]
-const sfCount = koStructure.sf.length; // 2
-const finCount = koStructure.finals.length; // 2
-const slotHCur = usableH / sfCount;
-const slotHNxt = usableH2 / finCount;
-
-// Final (winners): koStructure.finals[1] gets winner of sf[0] and sf[1]
-const yW0 = hdrH2 + slotHCur * 0 + (slotHCur - MATCH_H) / 2 + MATCH_H / 2;
-const yW1 = hdrH2 + slotHCur * 1 + (slotHCur - MATCH_H) / 2 + MATCH_H / 2;
-const yFinal = hdrH2 + slotHNxt * 1 + (slotHNxt - MATCH_H) / 2 + MATCH_H / 2;
-const y3rd   = hdrH2 + slotHNxt * 0 + (slotHNxt - MATCH_H) / 2 + MATCH_H / 2;
+if(col.p === "sf") {
+// SF → Final (solid winners) — drawn in this connector
+const sfSlotH = usableH / 2;
+const yW0 = hdrH + sfSlotH * 0 + (sfSlotH - MATCH_H) / 2 + MATCH_H / 2;
+const yW1 = hdrH + sfSlotH * 1 + (sfSlotH - MATCH_H) / 2 + MATCH_H / 2;
+const yFinal = hdrH + usableH / 2; // final card centred in full height
 const yWmid = (yW0 + yW1) / 2;
-
 line(svg, 0, yW0, 14, yW0, lineColor);
 line(svg, 0, yW1, 14, yW1, lineColor);
 line(svg, 14, yW0, 14, yW1, lineColor);
 line(svg, 14, yWmid, 28, yFinal, lineColor);
-// 3rd place — losers branch (dashed)
-line(svg, 0, yW0, 8, yW0, lineColor, true);
-line(svg, 0, yW1, 8, yW1, lineColor, true);
-line(svg, 8, yW0, 8, yW1, lineColor, true);
-line(svg, 8, (yW0+yW1)/2, 28, y3rd, lineColor, true);
-})();
+
+} else if(col.p === "third") {
+// third → final col: dashed losers lines from SF positions
+const sfSlotH = usableH / 2;
+const yL0 = hdrH + sfSlotH * 0 + (sfSlotH - MATCH_H) / 2 + MATCH_H / 2;
+const yL1 = hdrH + sfSlotH * 1 + (sfSlotH - MATCH_H) / 2 + MATCH_H / 2;
+const y3rd = hdrH + usableH / 2;
+const yLmid = (yL0 + yL1) / 2;
+line(svg, 0, yL0, 10, yL0, lineColor, true);
+line(svg, 0, yL1, 10, yL1, lineColor, true);
+line(svg, 10, yL0, 10, yL1, lineColor, true);
+line(svg, 10, yLmid, 28, y3rd, lineColor, true);
+
+} else {
+// Standard pairing connector
+const curMatches = col.ids ? col.ids.map(id=>allMatches[id]).filter(Boolean) : (koStructure[col.p]||[]);
+const nxtMatches = nextCol.ids ? nextCol.ids.map(id=>allMatches[id]).filter(Boolean) : (koStructure[nextCol.p]||[]);
+const slotHCur = usableH / curMatches.length;
+const slotHNxt = usableH / nxtMatches.length;
+
+nxtMatches.forEach((nm, nmi) => {
+const srcA = nmi * 2, srcB = nmi * 2 + 1;
+const yA = hdrH + slotHCur * srcA + (slotHCur - MATCH_H) / 2 + MATCH_H / 2;
+const yB = hdrH + slotHCur * srcB + (slotHCur - MATCH_H) / 2 + MATCH_H / 2;
+const yMid = (yA + yB) / 2;
+const yNxt = hdrH + slotHNxt * nmi + (slotHNxt - MATCH_H) / 2 + MATCH_H / 2;
+line(svg, 0, yA, 14, yA, lineColor);
+line(svg, 0, yB, 14, yB, lineColor);
+line(svg, 14, yA, 14, yB, lineColor);
+line(svg, 14, yMid, 28, yMid, lineColor);
+line(svg, 28, yMid, 28, yNxt, lineColor);
+});
+}
 
 svgWrap.appendChild(svg);
 root.appendChild(svgWrap);
-}
 });
 }
 
